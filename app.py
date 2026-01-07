@@ -56,6 +56,11 @@ def preprocess_image(image_path):
 def index():
     return render_template('index.html')
 
+@app.route('/health')
+def health():
+    """Health check endpoint for Render"""
+    return {'status': 'healthy'}, 200
+
 @app.route('/accuracy_plot')
 def accuracy_plot():
     """Serve the accuracy plot image"""
