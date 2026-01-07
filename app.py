@@ -19,10 +19,14 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 # Load the pre-trained model
 model = None
 try:
-    model = load_model('cnn.hdf5')
-    print("Model loaded successfully!")
+    # Get the directory where the script is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(script_dir, 'cnn.hdf5')
+    model = load_model(model_path)
+    print(f"Model loaded successfully from: {model_path}")
 except Exception as e:
     print(f"Error loading model: {e}")
+    print(f"Looking for model in: {os.path.dirname(os.path.abspath(__file__))}")
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -133,5 +137,8 @@ if __name__ == '__main__':
     os.makedirs('static/predictions', exist_ok=True)
     os.makedirs('static/uploads', exist_ok=True)
     
-    # Run the app
-    app.run(debug=True, port=5000)
+    # Get port from environment variable or use 5000 for local development
+    port = int(os.environ.get('PORT', 5000))
+    
+    # Run app
+    app.run(debug=False, host='0.0.0.0', port=port)
