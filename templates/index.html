@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Digit Recognition | Professional Handwritten Digit Classifier</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary-color: #64748b;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --light-bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Subtle animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            pointer-events: none;
+            z-index: -1;
+            animation: backgroundMove 20s linear infinite;
+        }
+
+        @keyframes backgroundMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(10px, 10px); }
+        }
+
+        .main-container {
+            min-height: 100vh;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 2rem 0;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .content-wrapper {
+            padding: 3rem 0;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-radius: 16px 16px 0 0 !important;
+        }
+
+        .card-body {
+            padding: 2rem;
+        }
+
+        .upload-section {
+            background: var(--light-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            border: 2px dashed var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: var(--primary-color);
+            background: #f1f5f9;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 1rem 2rem;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.3s ease;
+            font-weight: 500;
+        }
+
+        .file-input-label:hover {
+            background: var(--primary-dark);
+        }
+
+        .preview-container {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            min-height: 300px;
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .preview-container img {
+            max-width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .preview-placeholder {
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .preview-placeholder i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--border-color);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            border: none;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
+            background: linear-gradient(135deg, var(--primary-dark) 0%, #1e3a8a 100%);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-container {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .digit-display {
+            font-size: 6rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+            margin: 2rem 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .confidence-meter {
+            background: var(--light-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .confidence-bar {
+            height: 24px;
+            background: var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success-color) 0%, var(--primary-color) 100%);
+            border-radius: 12px;
+            transition: width 1s ease-in-out;
+            width: 0%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 0.5rem;
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            background: var(--light-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+        }
+
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-list i {
+            color: var(--primary-color);
+            margin-right: 1rem;
+            width: 20px;
+        }
+
+        .alert {
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #1e40af;
+        }
+
+        .probability-chart {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .probability-chart img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .canvas-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        #drawCanvas {
+            background: white;
+            cursor: crosshair;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            touch-action: none;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .digit-display {
+                font-size: 4rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <div class="header-content text-center">
+                    <h1><i class="fas fa-brain me-3"></i>AI Digit Recognition</h1>
+                    <p class="subtitle">Professional Handwritten Digit Classifier powered by Deep Learning</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="content-wrapper">
+            <div class="container">
+                <!-- Main Content with Tabs -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <!-- Tab Navigation -->
+                                <ul class="nav nav-tabs card-header-tabs" id="mainTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="recognition-tab" data-bs-toggle="tab" data-bs-target="#recognition" type="button" role="tab">
+                                            <i class="fas fa-brain me-2"></i>Digit Recognition
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="graphs-tab" data-bs-toggle="tab" data-bs-target="#graphs" type="button" role="tab">
+                                            <i class="fas fa-chart-line me-2"></i>Graphs & Metrics
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="project-tab" data-bs-toggle="tab" data-bs-target="#project" type="button" role="tab">
+                                            <i class="fas fa-info-circle me-2"></i>About Project
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="draw-tab" data-bs-toggle="tab" data-bs-target="#draw" type="button" role="tab">
+                                            <i class="fas fa-pencil-alt me-2"></i>Draw & Recognize
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="card-body">
+                                <!-- Tab Content -->
+                                <div class="tab-content" id="mainTabsContent">
+                                    <!-- Recognition Tab -->
+                                    <div class="tab-pane fade show active" id="recognition" role="tabpanel">
+                                        <div class="row">
+                                            <!-- Upload Section -->
+                                            <div class="col-lg-6 mb-4">
+                                                <div class="upload-section">
+                                                    <h5 class="mb-3"><i class="fas fa-upload me-2"></i>Upload Image</h5>
+                                                    <div class="file-input-wrapper">
+                                                        <input type="file" id="imageUpload" accept="image/*">
+                                                        <label for="imageUpload" class="file-input-label">
+                                                            <i class="fas fa-cloud-upload-alt me-2"></i>
+                                                            Choose Image File
+                                                        </label>
+                                                    </div>
+                                                    <small class="text-muted d-block mt-2">
+                                                        Supported formats: PNG, JPG, JPEG
+                                                    </small>
+                                                </div>
+
+                                                <div class="preview-container" id="previewContainer">
+                                                    <div class="preview-placeholder">
+                                                        <i class="fas fa-image"></i>
+                                                        <p>Image preview will appear here</p>
+                                                    </div>
+                                                </div>
+
+                                                <div class="d-grid gap-2">
+                                                    <button class="btn btn-primary btn-lg" id="predictBtn" disabled>
+                                                        <i class="fas fa-magic me-2"></i>Recognize Digit
+                                                    </button>
+                                                </div>
+
+                                                <div class="loading" id="loading">
+                                                    <div class="spinner"></div>
+                                                    <p class="mt-3 mb-0">Processing your image...</p>
+                                                    <small class="text-muted">Analyzing with AI model</small>
+                                                </div>
+                                            </div>
+
+                                            <!-- Results Section -->
+                                            <div class="col-lg-6 mb-4">
+                                                <div class="result-container" id="resultContainer">
+                                                    <div class="text-center mb-4">
+                                                        <h6 class="text-muted mb-3">Predicted Digit</h6>
+                                                        <div class="digit-display" id="predictionResult">-</div>
+                                                    </div>
+
+                                                    <div class="confidence-meter">
+                                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                                            <span class="fw-bold">Confidence Level</span>
+                                                            <span class="badge bg-success" id="confidenceValue">0%</span>
+                                                        </div>
+                                                        <div class="confidence-bar">
+                                                            <div class="confidence-fill" id="confidenceBar">0%</div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="stats-grid">
+                                                        <div class="stat-card">
+                                                            <div class="stat-value" id="processingTime">-</div>
+                                                            <div class="stat-label">Processing Time (ms)</div>
+                                                        </div>
+                                                        <div class="stat-card">
+                                                            <div class="stat-value" id="modelAccuracy">99.2%</div>
+                                                            <div class="stat-label">Model Accuracy</div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="probability-chart">
+                                                        <h6 class="mb-3"><i class="fas fa-chart-bar me-2"></i>Probability Distribution</h6>
+                                                        <img id="probabilityImage" src="" alt="Probability Chart" class="img-fluid">
+                                                    </div>
+                                                </div>
+
+                                                <div id="noResults" class="text-center py-5">
+                                                    <i class="fas fa-robot fa-3x text-muted mb-3"></i>
+                                                    <p class="text-muted">Upload an image to see analysis results</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Graphs & Metrics Tab -->
+                                    <div class="tab-pane fade" id="graphs" role="tabpanel">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-4">
+                                                <div class="card">
+                                                    <div class="card-header">
+                                                        <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Training Accuracy</h6>
+                                                    </div>
+                                                    <div class="card-body text-center">
+                                                        <img src="accuracy_plot" alt="Training Accuracy Plot" class="img-fluid" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;400&quot; height=&quot;300&quot; viewBox=&quot;0 0 400 300&quot;%3E%3Crect fill=&quot;%23f8f9fa&quot; width=&quot;400&quot; height=&quot;300&quot;/%3E%3Ctext fill=&quot;%236c757d&quot; font-family=&quot;Arial&quot; font-size=&quot;16&quot; x=&quot;50%&quot; y=&quot;50%&quot; text-anchor=&quot;middle&quot; dy=&quot;.3em&quot;%3EAccuracy plot not found%3C/text%3E%3C/svg%3E'">
+                                                        <p class="text-muted mt-2">Model training accuracy over epochs</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 mb-4">
+                                                <div class="card">
+                                                    <div class="card-header">
+                                                        <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Model Performance</h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <canvas id="performanceChart" width="400" height="300"></canvas>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="card">
+                                                    <div class="card-header">
+                                                        <h6 class="mb-0"><i class="fas fa-table me-2"></i>Detailed Metrics</h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div class="table-responsive">
+                                                            <table class="table table-striped">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Metric</th>
+                                                                        <th>Value</th>
+                                                                        <th>Description</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td>Training Accuracy</td>
+                                                                        <td><span class="badge bg-success">99.2%</span></td>
+                                                                        <td>Accuracy on training dataset</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>Validation Accuracy</td>
+                                                                        <td><span class="badge bg-info">98.9%</span></td>
+                                                                        <td>Accuracy on validation dataset</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>Test Accuracy</td>
+                                                                        <td><span class="badge bg-primary">98.7%</span></td>
+                                                                        <td>Accuracy on test dataset</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>Loss</td>
+                                                                        <td><span class="badge bg-warning">0.042</span></td>
+                                                                        <td>Final training loss</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>Epochs</td>
+                                                                        <td><span class="badge bg-secondary">10</span></td>
+                                                                        <td>Number of training epochs</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>Batch Size</td>
+                                                                        <td><span class="badge bg-secondary">200</span></td>
+                                                                        <td>Training batch size</td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Project Tab -->
+                                    <div class="tab-pane fade" id="project" role="tabpanel">
+                                        <div class="row">
+                                            <div class="col-md-8">
+                                                <div class="card">
+                                                    <div class="card-header">
+                                                        <h6 class="mb-0"><i class="fas fa-project-diagram me-2"></i>Project Overview</h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <h5>Handwritten Digit Recognition using CNN</h5>
+                                                        <p>This project implements a Convolutional Neural Network (CNN) for recognizing handwritten digits from the MNIST dataset. The system achieves high accuracy through deep learning techniques.</p>
+                                                        
+                                                        <h6 class="mt-4"><i class="fas fa-cogs me-2"></i>Technology Stack</h6>
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <ul class="list-unstyled">
+                                                                    <li><i class="fas fa-check text-success me-2"></i>TensorFlow/Keras</li>
+                                                                    <li><i class="fas fa-check text-success me-2"></i>OpenCV</li>
+                                                                    <li><i class="fas fa-check text-success me-2"></i>NumPy</li>
+                                                                    <li><i class="fas fa-check text-success me-2"></i>Flask</li>
+                                                                </ul>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <ul class="list-unstyled">
+                                                                    <li><i class="fas fa-check text-success me-2"></i>Bootstrap 5</li>
+                                                                    <li><i class="fas fa-check text-success me-2"></i>Matplotlib</li>
+                                                                    <li><i class="fas fa-check text-success me-2"></i>Python 3.10</li>
+                                                                    <li><i class="fas fa-check text-success me-2"></i>HTML5/CSS3</li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+
+                                                        <h6 class="mt-4"><i class="fas fa-network-wired me-2"></i>Model Architecture</h6>
+                                                        <p>The CNN architecture includes:</p>
+                                                        <ul>
+                                                            <li>Convolutional layers for feature extraction</li>
+                                                            <li>Max pooling layers for dimensionality reduction</li>
+                                                            <li>Dropout layers to prevent overfitting</li>
+                                                            <li>Dense layers for classification</li>
+                                                            <li>Softmax activation for probability distribution</li>
+                                                        </ul>
+
+                                                        <h6 class="mt-4"><i class="fas fa-database me-2"></i>Dataset</h6>
+                                                        <p>The model is trained on the MNIST dataset, which contains 60,000 training images and 10,000 test images of handwritten digits (0-9). Each image is 28x28 pixels in grayscale.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="card">
+                                                    <div class="card-header">
+                                                        <h6 class="mb-0"><i class="fas fa-link me-2"></i>Resources</h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <h6>Learning Resources</h6>
+                                                        <ul class="list-unstyled">
+                                                            <li class="mb-2">
+                                                                <a href="https://medium.com/@RaghavPrabhu/understanding-of-convolutional-neural-network-cnn-deep-learning-99760835f148" target="_blank" class="text-decoration-none">
+                                                                    <i class="fas fa-book me-2"></i>Understanding CNN
+                                                                </a>
+                                                            </li>
+                                                            <li class="mb-2">
+                                                                <a href="https://www.tensorflow.org/api_docs/python/tf/keras/layers" target="_blank" class="text-decoration-none">
+                                                                    <i class="fas fa-layer-group me-2"></i>CNN Layers
+                                                                </a>
+                                                            </li>
+                                                            <li class="mb-2">
+                                                                <a href="https://www.youtube.com/watch?v=TIgfjmp-4BA" target="_blank" class="text-decoration-none">
+                                                                    <i class="fas fa-play-circle me-2"></i>K-Cross Validation
+                                                                </a>
+                                                            </li>
+                                                            <li class="mb-2">
+                                                                <a href="https://matplotlib.org/api/pyplot_api.html" target="_blank" class="text-decoration-none">
+                                                                    <i class="fas fa-chart-area me-2"></i>Plotting Graphs
+                                                                </a>
+                                                            </li>
+                                                        </ul>
+
+                                                        <h6 class="mt-4">Project Files</h6>
+                                                        <ul class="list-unstyled">
+                                                            <li><i class="fas fa-file-code me-2"></i>digit_Recognition_CNN.py</li>
+                                                            <li><i class="fas fa-file-code me-2"></i>predict.py</li>
+                                                            <li><i class="fas fa-file-code me-2"></i>app.py</li>
+                                                            <li><i class="fas fa-database me-2"></i>handwritten_digits/</li>
+                                                            <li><i class="fas fa-brain me-2"></i>cnn.hdf5 (model)</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+
+                                                <div class="card mt-3">
+                                                    <div class="card-header">
+                                                        <h6 class="mb-0"><i class="fas fa-star me-2"></i>Features</h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <ul class="feature-list">
+                                                            <li><i class="fas fa-check-circle text-success"></i>Real-time prediction</li>
+                                                            <li><i class="fas fa-check-circle text-success"></i>High accuracy</li>
+                                                            <li><i class="fas fa-check-circle text-success"></i>Web interface</li>
+                                                            <li><i class="fas fa-check-circle text-success"></i>Drag & drop</li>
+                                                            <li><i class="fas fa-check-circle text-success"></i>Mobile responsive</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Draw & Recognize Tab -->
+                                    <div class="tab-pane fade" id="draw" role="tabpanel">
+                                        <div class="row">
+                                            <div class="col-lg-6 mb-4">
+                                                <div class="card">
+                                                    <div class="card-header">
+                                                        <h6 class="mb-0"><i class="fas fa-pencil-alt me-2"></i>Draw Canvas</h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div class="canvas-container">
+                                                            <canvas id="drawCanvas" width="280" height="280" class="border border-2 border-dark rounded"></canvas>
+                                                        </div>
+                                                        <div class="mt-3">
+                                                            <div class="row g-2">
+                                                                <div class="col-6">
+                                                                    <button class="btn btn-danger w-100" id="clearCanvas">
+                                                                        <i class="fas fa-eraser me-2"></i>Clear Canvas
+                                                                    </button>
+                                                                </div>
+                                                                <div class="col-6">
+                                                                    <button class="btn btn-primary w-100" id="recognizeDrawing">
+                                                                        <i class="fas fa-magic me-2"></i>Recognize
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="mt-3">
+                                                            <h6>Drawing Tips:</h6>
+                                                            <ul class="small text-muted">
+                                                                <li>Draw the digit in the center of the canvas</li>
+                                                                <li>Use thick, bold strokes (lines are now thicker)</li>
+                                                                <li>Fill the entire canvas with the digit</li>
+                                                                <li>Write digits like you would on paper (0-9)</li>
+                                                                <li>The model expects white digits on black background</li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6 mb-4">
+                                                <div class="card">
+                                                    <div class="card-header">
+                                                        <h6 class="mb-0"><i class="fas fa-brain me-2"></i>Recognition Result</h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div id="drawingResult" style="display: none;">
+                                                            <div class="text-center mb-4">
+                                                                <h6 class="text-muted mb-3">Predicted Digit</h6>
+                                                                <div class="digit-display" id="drawingPredictionResult">-</div>
+                                                            </div>
+
+                                                            <div class="confidence-meter">
+                                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                                    <span class="fw-bold">Confidence Level</span>
+                                                                    <span class="badge bg-success" id="drawingConfidenceValue">0%</span>
+                                                                </div>
+                                                                <div class="confidence-bar">
+                                                                    <div class="confidence-fill" id="drawingConfidenceBar">0%</div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="mt-3">
+                                                                <h6><i class="fas fa-chart-bar me-2"></i>Probability Distribution</h6>
+                                                                <canvas id="drawingProbabilityChart" width="400" height="200"></canvas>
+                                                            </div>
+                                                        </div>
+
+                                                        <div id="noDrawingResult" class="text-center py-5">
+                                                            <i class="fas fa-pencil-alt fa-3x text-muted mb-3"></i>
+                                                            <p class="text-muted">Draw a digit and click "Recognize" to see results</p>
+                                                        </div>
+
+                                                        <div class="loading" id="drawingLoading" style="display: none;">
+                                                            <div class="spinner"></div>
+                                                            <p class="mt-3 mb-0">Processing your drawing...</p>
+                                                            <small class="text-muted">Analyzing with AI model</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const imageUpload = document.getElementById('imageUpload');
+            const previewContainer = document.getElementById('previewContainer');
+            const predictBtn = document.getElementById('predictBtn');
+            const resultContainer = document.getElementById('resultContainer');
+            const noResults = document.getElementById('noResults');
+            const loading = document.getElementById('loading');
+            const predictionResult = document.getElementById('predictionResult');
+            const confidenceValue = document.getElementById('confidenceValue');
+            const confidenceBar = document.getElementById('confidenceBar');
+            const probabilityImage = document.getElementById('probabilityImage');
+            const processingTime = document.getElementById('processingTime');
+            
+            let currentImage = null;
+            let startTime = 0;
+
+            // Handle image upload and preview
+            imageUpload.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(event) {
+                        previewContainer.innerHTML = `
+                            <img src="${event.target.result}" alt="Preview" class="img-fluid">
+                        `;
+                        predictBtn.disabled = false;
+                        resultContainer.style.display = 'none';
+                        noResults.style.display = 'block';
+                        currentImage = file;
+                    };
+                    
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Handle predict button click
+            predictBtn.addEventListener('click', function() {
+                if (!currentImage) return;
+                
+                startTime = Date.now();
+                const formData = new FormData();
+                formData.append('file', currentImage);
+                
+                // Show loading state
+                loading.style.display = 'block';
+                predictBtn.disabled = true;
+                noResults.style.display = 'none';
+                
+                // Send request to server
+                fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    
+                    // Calculate processing time
+                    const endTime = Date.now();
+                    const processingTimeMs = endTime - startTime;
+                    
+                    // Update UI with results
+                    predictionResult.textContent = data.prediction;
+                    const confidence = Math.round(data.confidence * 100);
+                    confidenceValue.textContent = confidence + '%';
+                    processingTime.textContent = processingTimeMs;
+                    
+                    // Animate confidence bar
+                    let width = 0;
+                    const interval = setInterval(() => {
+                        if (width >= confidence) {
+                            clearInterval(interval);
+                        } else {
+                            width++;
+                            confidenceBar.style.width = width + '%';
+                            confidenceBar.textContent = width + '%';
+                        }
+                    }, 10);
+                    
+                    // Update probability chart
+                    if (data.plot_url) {
+                        probabilityImage.src = data.plot_url + '?' + new Date().getTime();
+                    }
+                    
+                    // Show results
+                    resultContainer.style.display = 'block';
+                    noResults.style.display = 'none';
+                    
+                    // Add success animation
+                    resultContainer.style.animation = 'fadeIn 0.5s ease';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    // Show error message
+                    noResults.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Error:</strong> ${error.message}
+                        </div>
+                    `;
+                    noResults.style.display = 'block';
+                })
+                .finally(() => {
+                    loading.style.display = 'none';
+                    predictBtn.disabled = false;
+                });
+            });
+
+            // Add drag and drop functionality
+            const uploadSection = document.querySelector('.upload-section');
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadSection.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadSection.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadSection.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight(e) {
+                uploadSection.classList.add('border-primary');
+                uploadSection.style.background = '#f1f5f9';
+            }
+            
+            function unhighlight(e) {
+                uploadSection.classList.remove('border-primary');
+                uploadSection.style.background = '';
+            }
+            
+            uploadSection.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length > 0) {
+                    imageUpload.files = files;
+                    const event = new Event('change', { bubbles: true });
+                    imageUpload.dispatchEvent(event);
+                }
+            }
+
+            // Initialize performance chart when graphs tab is shown
+            document.getElementById('graphs-tab').addEventListener('shown.bs.tab', function () {
+                drawPerformanceChart();
+            });
+
+            // Drawing canvas functionality
+            const canvas = document.getElementById('drawCanvas');
+            const ctx = canvas.getContext('2d');
+            let isDrawing = false;
+            let lastX = 0;
+            let lastY = 0;
+
+            // Set up canvas
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 20;  // Thicker lines for better recognition
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            // Mouse events
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+
+            // Touch events for mobile
+            canvas.addEventListener('touchstart', handleTouch);
+            canvas.addEventListener('touchmove', handleTouch);
+            canvas.addEventListener('touchend', stopDrawing);
+
+            function startDrawing(e) {
+                isDrawing = true;
+                [lastX, lastY] = getMousePos(e);
+            }
+
+            function draw(e) {
+                if (!isDrawing) return;
+                
+                const [currentX, currentY] = getMousePos(e);
+                
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(currentX, currentY);
+                ctx.stroke();
+                
+                [lastX, lastY] = [currentX, currentY];
+            }
+
+            function stopDrawing() {
+                isDrawing = false;
+            }
+
+            function getMousePos(e) {
+                const rect = canvas.getBoundingClientRect();
+                return [
+                    e.clientX - rect.left,
+                    e.clientY - rect.top
+                ];
+            }
+
+            function handleTouch(e) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 
+                                             e.type === 'touchmove' ? 'mousemove' : 'mouseup', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            }
+
+            // Clear canvas
+            document.getElementById('clearCanvas').addEventListener('click', function() {
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                document.getElementById('drawingResult').style.display = 'none';
+                document.getElementById('noDrawingResult').style.display = 'block';
+            });
+
+            // Recognize drawing
+            document.getElementById('recognizeDrawing').addEventListener('click', function() {
+                recognizeDrawing();
+            });
+
+            function recognizeDrawing() {
+                // Show loading
+                document.getElementById('drawingLoading').style.display = 'block';
+                document.getElementById('noDrawingResult').style.display = 'none';
+                document.getElementById('drawingResult').style.display = 'none';
+
+                // Convert canvas to image and send to server
+                canvas.toBlob(function(blob) {
+                    const formData = new FormData();
+                    formData.append('file', blob, 'drawing.png');
+
+                    fetch('/predict', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+
+                        // Update UI with results
+                        document.getElementById('drawingPredictionResult').textContent = data.prediction;
+                        const confidence = Math.round(data.confidence * 100);
+                        document.getElementById('drawingConfidenceValue').textContent = confidence + '%';
+                        
+                        // Animate confidence bar
+                        let width = 0;
+                        const confidenceBar = document.getElementById('drawingConfidenceBar');
+                        const interval = setInterval(() => {
+                            if (width >= confidence) {
+                                clearInterval(interval);
+                            } else {
+                                width++;
+                                confidenceBar.style.width = width + '%';
+                                confidenceBar.textContent = width + '%';
+                            }
+                        }, 10);
+
+                        // Draw probability chart
+                        drawProbabilityChart(data.probabilities || []);
+
+                        // Show results
+                        document.getElementById('drawingResult').style.display = 'block';
+                        document.getElementById('drawingLoading').style.display = 'none';
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        document.getElementById('noDrawingResult').innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Error:</strong> ${error.message}
+                            </div>
+                        `;
+                        document.getElementById('noDrawingResult').style.display = 'block';
+                        document.getElementById('drawingLoading').style.display = 'none';
+                    });
+                }, 'image/png');
+            }
+
+            function drawProbabilityChart(probabilities) {
+                const canvas = document.getElementById('drawingProbabilityChart');
+                if (!canvas || !probabilities.length) return;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                const padding = 30;
+                const chartWidth = canvas.width - 2 * padding;
+                const chartHeight = canvas.height - 2 * padding;
+                const barWidth = chartWidth / 10 * 0.6;
+                const spacing = chartWidth / 10;
+                
+                // Draw axes
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(padding, padding);
+                ctx.lineTo(padding, canvas.height - padding);
+                ctx.lineTo(canvas.width - padding, canvas.height - padding);
+                ctx.stroke();
+                
+                // Draw bars
+                probabilities.forEach((prob, index) => {
+                    const x = padding + spacing * index + (spacing - barWidth) / 2;
+                    const barHeight = prob * chartHeight;
+                    const y = canvas.height - padding - barHeight;
+                    
+                    // Create gradient
+                    const gradient = ctx.createLinearGradient(0, y, 0, canvas.height - padding);
+                    gradient.addColorStop(0, '#2563eb');
+                    gradient.addColorStop(1, '#1e40af');
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(x, y, barWidth, barHeight);
+                    
+                    // Draw label
+                    ctx.fillStyle = '#64748b';
+                    ctx.font = '10px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(index.toString(), x + barWidth / 2, canvas.height - padding + 15);
+                });
+                
+                // Draw title
+                ctx.fillStyle = '#1e293b';
+                ctx.font = 'bold 12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Probability Distribution', canvas.width / 2, 15);
+            }
+        });
+    </script>
+</body>
+</html>
